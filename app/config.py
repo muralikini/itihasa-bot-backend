@@ -19,13 +19,14 @@ class Settings(BaseSettings):
     # LLM
     xai_api_key: str = ""
     google_api_key: str = ""
-    primary_llm: str = "grok"  # "grok" | "gemini"
+    primary_llm: str = "ollama"          # "ollama" | "grok" | "gemini"
+    ollama_model: str = "llama3.2"
 
-    # Database
+    # Database (not used while on Chroma)
     database_url: str = "postgresql://postgres:postgres@localhost:5432/itihasa"
 
     # RAG
-    embedding_model: str = "models/text-embedding-004"
+    embedding_model: str = "models/embedding-001"
     chunk_size: int = 1000
     chunk_overlap: int = 200
     top_k: int = 6
