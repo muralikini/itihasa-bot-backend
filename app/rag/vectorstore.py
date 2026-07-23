@@ -1,14 +1,20 @@
 """
-Postgres + pgvector vector store helpers using LangChain.
+Chroma vector store helpers using LangChain.
+Local file-based vector database – no Postgres required.
 """
 
+from pathlib import Path
 from typing import List, Optional
 
 from langchain_core.documents import Document
-from langchain_postgres import PGVector
+from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from app.config import get_settings
+
+
+# Persist Chroma DB here
+CHROMA_DIR = Path(__file__).resolve().parents[2] / "data" / "chroma"
 
 
 def get_embeddings():
@@ -19,15 +25,19 @@ def get_embeddings():
     )
 
 
-def get_vectorstore(collection_name: str = "itihasa_docs") -> PGVector:
-    settings = get_settings()
+def get_vectorstore(collection_name: str = "itihasa_docs") -> Chroma:
+    """
+    Returns a persistent Chroma vector store.
+    Creates the directory if it does not exist.
+    """
+    CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+
     embeddings = get_embeddings()
 
-    return PGVector(
-        embeddings=embeddings,
+    return Chroma(
         collection_name=collection_name,
-        connection=settings.database_url,
-        use_jsonb=True,
+        embedding_function=embeddings,
+        persist_directory=str(CHROMA_DIR),
     )
 
 
@@ -37,4 +47,7 @@ def similarity_search(
     filter: Optional[dict] = None,
 ) -> List[Document]:
     vs = get_vectorstore()
-    return vs.similarity_search(query, k=k, filter=filter)
+
+    if filter:
+        return vs.similarity_search(query, k=k, filter=filter)
+    return vs.similarity_search(query, k=k)

@@ -9,7 +9,7 @@ pydantic-settings==2.7.0
 python-dotenv==1.0.1
 
 # LLM providers
-openai>=1.58.0          # used for xAI Grok (OpenAI-compatible)
+openai>=1.58.0
 google-generativeai>=0.8.3
 
 # RAG & LangChain
@@ -17,12 +17,11 @@ langchain==0.3.14
 langchain-community==0.3.14
 langchain-openai==0.2.14
 langchain-google-genai==2.0.8
-langchain-postgres==0.0.12
 langchain-text-splitters==0.3.4
+langchain-chroma>=0.1.4
 
-# Vector store (Postgres + pgvector)
-psycopg[binary]==3.2.3
-pgvector==0.3.6
+# Vector store - Chroma (local, no Postgres needed for now)
+chromadb>=0.5.0
 
 # PDF processing
 pymupdf==1.25.1
@@ -32,4 +31,4 @@ pypdf==5.1.0
 httpx==0.28.1
 tenacity==9.0.0
 tiktoken==0.8.0
-numpy==2.2.1
+numpy>=1.26.4,<2.1

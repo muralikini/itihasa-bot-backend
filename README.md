@@ -4,9 +4,12 @@ Kid-friendly chatbot that teaches the **Ramayana** and **Mahabharata** using RAG
 
 **Stack**
 - FastAPI
-- LangChain + Postgres (pgvector)
+- LangChain + **Chroma** (local vector store)
 - LLMs: **Grok (xAI)** primary + **Gemini** fallback
 - PDF extraction: PyMuPDF
+
+> Note: We are currently using Chroma (file-based) so you don’t need Postgres.  
+> We can switch back to Postgres + pgvector later when deploying to Render.
 
 ---
 
@@ -27,91 +30,37 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` and add:
+Edit `.env` and add your real keys:
 - `XAI_API_KEY` → from https://console.x.ai
-- `GOOGLE_API_KEY` → from https://aistudio.google.com
-- `DATABASE_URL` → your Render Postgres connection string (or local Postgres with pgvector)
+- `GOOGLE_API_KEY` → from https://aistudio.google.com (must start with `AIzaSy...`)
 
-### 3. Put your PDFs (separate folders)
+### 3. Put your PDFs
 
 ```
 knowledge/pdfs/
-├── ramayana/          ← Put all Ramayana PDFs here
-│   └── *.pdf
-└── mahabharata/       ← Put all Mahabharata PDFs here
-    └── *.pdf
+├── ramayana/          ← Ramayana PDFs
+└── mahabharata/       ← Mahabharata PDFs
 ```
 
-Example:
-```bash
-cp /path/to/your/ramayana-*.pdf knowledge/pdfs/ramayana/
-cp /path/to/your/mahabharata-*.pdf knowledge/pdfs/mahabharata/
-```
-
-### 4. Create the vector extension (one-time on Postgres)
-
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-### 5. Ingest documents
+### 4. Ingest documents
 
 ```bash
 python -m scripts.ingest_documents
 ```
 
-### 6. Run the API
+This will create a local Chroma database in `data/chroma/`.
+
+### 5. Run the API
 
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-Open http://localhost:8000/docs to try the `/chat` endpoint.
+Open http://localhost:8000/docs
 
 ---
 
-## API
+## Notes
 
-**POST /chat**
-
-```json
-{
-  "message": "Who is Hanuman and what is he known for?",
-  "history": [],
-  "epic_filter": "ramayana",   // optional: "ramayana" | "mahabharata"
-  "provider": "grok"           // optional: "grok" | "gemini"
-}
-```
-
----
-
-## Project Structure
-
-```
-app/
-├── api/chat.py          # Chat endpoint
-├── llm/                 # Grok + Gemini + router
-├── rag/                 # Ingest, retrieve, vectorstore
-├── prompts/system.py    # Kid-safe system prompt
-└── main.py
-knowledge/pdfs/
-├── ramayana/            # Your Ramayana PDFs
-└── mahabharata/         # Your Mahabharata PDFs
-scripts/ingest_documents.py
-```
-
----
-
-## Notes on large PDFs
-
-Your largest file is ~89 MB. PyMuPDF handles this fine.  
-Ingestion may take a few minutes the first time depending on total size and embedding rate limits.
-
----
-
-## Next
-
-- Frontend (separate repo)
-- Character cards endpoint
-- Better metadata / chapter-aware chunking
-- Admin upload endpoint for new PDFs
+- Some PDFs may return empty text (they are scanned images). We can add OCR later.
+- First ingestion of large books can take several minutes because of embedding.

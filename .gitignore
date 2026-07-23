@@ -18,7 +18,7 @@ dist/
 .mypy_cache/
 .ruff_cache/
 
-# Knowledge base - PDFs are large (up to 89MB), keep out of git
+# Knowledge base - PDFs are large, keep out of git
 knowledge/pdfs/**/*.pdf
 knowledge/pdfs/**/*.PDF
 !knowledge/pdfs/**/.gitkeep
