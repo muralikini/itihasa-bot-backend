@@ -67,9 +67,6 @@ def load_pdfs_from_folder(folder: Path, epic: str) -> List[Document]:
 def load_all_pdfs() -> List[Document]:
     """
     Load PDFs from both epic folders.
-    Structure expected:
-        knowledge/pdfs/ramayana/*.pdf
-        knowledge/pdfs/mahabharata/*.pdf
     """
     documents: List[Document] = []
 
@@ -80,35 +77,6 @@ def load_all_pdfs() -> List[Document]:
     # Load Mahabharata
     mahabharata_dir = KNOWLEDGE_DIR / "mahabharata"
     documents.extend(load_pdfs_from_folder(mahabharata_dir, "mahabharata"))
-
-    # Fallback: also check the root pdfs/ folder (for old structure)
-    root_pdfs = list(KNOWLEDGE_DIR.glob("*.pdf")) + list(KNOWLEDGE_DIR.glob("*.PDF"))
-    if root_pdfs:
-        print(f"[Ingest] Also found {len(root_pdfs)} PDF(s) in root pdfs/ folder (legacy)")
-        for pdf_path in root_pdfs:
-            name_lower = pdf_path.name.lower()
-            epic = "unknown"
-            if "ramayan" in name_lower:
-                epic = "ramayana"
-            elif "mahabharat" in name_lower or "mb" in name_lower:
-                epic = "mahabharata"
-
-            try:
-                text = extract_text_from_pdf(pdf_path)
-                if text.strip():
-                    documents.append(
-                        Document(
-                            page_content=text,
-                            metadata={
-                                "source": pdf_path.name,
-                                "epic": epic,
-                                "file_path": str(pdf_path),
-                            },
-                        )
-                    )
-                    print(f"  → {pdf_path.name} | epic={epic}")
-            except Exception as e:
-                print(f"  → ERROR: {e}")
 
     return documents
 
@@ -129,7 +97,7 @@ def chunk_documents(documents: List[Document]) -> List[Document]:
 def ingest_all(reset: bool = False) -> int:
     """
     Full ingestion pipeline.
-    Returns number of chunks added.
+    Adds documents in batches to avoid Chroma max batch size limit.
     """
     documents = load_all_pdfs()
     if not documents:
@@ -142,9 +110,20 @@ def ingest_all(reset: bool = False) -> int:
     vs = get_vectorstore()
 
     if reset:
-        print("[Ingest] Reset requested — adding to existing collection (manual cleanup if needed)")
+        print("[Ingest] Reset requested — adding to existing collection")
 
-    # Add documents
-    vs.add_documents(chunks)
-    print(f"[Ingest] Successfully added {len(chunks)} chunks to vector store")
-    return len(chunks)
+    # Chroma has a max batch size (~5000). We use a safe smaller size.
+    BATCH_SIZE = 500
+    total = len(chunks)
+    added = 0
+
+    print(f"[Ingest] Adding {total} chunks in batches of {BATCH_SIZE} ...")
+
+    for i in range(0, total, BATCH_SIZE):
+        batch = chunks[i : i + BATCH_SIZE]
+        vs.add_documents(batch)
+        added += len(batch)
+        print(f"  → Added batch {i // BATCH_SIZE + 1}: {added}/{total} chunks")
+
+    print(f"[Ingest] Successfully added {added} chunks to vector store")
+    return added
