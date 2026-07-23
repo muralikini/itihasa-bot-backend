@@ -1,0 +1,47 @@
+# Environment
+.env
+.env.local
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Knowledge base - PDFs are large (up to 89MB), keep out of git
+knowledge/pdfs/*
+!knowledge/pdfs/.gitkeep
+
+# Vector store / local data
+data/
+*.chroma/
+.chroma/
+vectorstore/
+pgdata/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Render
+.render/
