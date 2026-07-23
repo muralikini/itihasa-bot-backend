@@ -2,65 +2,54 @@
 
 Kid-friendly chatbot that teaches the **Ramayana** and **Mahabharata** using RAG over your PDF documents.
 
-**Stack**
+**Current Stack**
 - FastAPI
 - LangChain + **Chroma** (local vector store)
-- LLMs: **Grok (xAI)** primary + **Gemini** fallback
+- **Local embeddings** (`all-MiniLM-L6-v2`) – no embedding API cost
+- LLMs for answers: **Grok (xAI)** primary + **Gemini** fallback
 - PDF extraction: PyMuPDF
-
-> Note: We are currently using Chroma (file-based) so you don’t need Postgres.  
-> We can switch back to Postgres + pgvector later when deploying to Render.
 
 ---
 
-## Quick Start (Local)
-
-### 1. Setup
+## Quick Start
 
 ```bash
 cd itihasa-bot-backend
 python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+.\.​venv\Scripts\Activate          # Windows
 pip install -r requirements.txt
 ```
 
-### 2. Environment
+### Environment
 
 ```bash
-cp .env.example .env
+copy .env.example .env
 ```
 
-Edit `.env` and add your real keys:
-- `XAI_API_KEY` → from https://console.x.ai
-- `GOOGLE_API_KEY` → from https://aistudio.google.com (must start with `AIzaSy...`)
-
-### 3. Put your PDFs
-
-```
-knowledge/pdfs/
-├── ramayana/          ← Ramayana PDFs
-└── mahabharata/       ← Mahabharata PDFs
+Add your keys (only needed for the chat answers, not for embeddings):
+```env
+XAI_API_KEY=...
+GOOGLE_API_KEY=...
 ```
 
-### 4. Ingest documents
+### Put PDFs
+
+```
+knowledge/pdfs/ramayana/
+knowledge/pdfs/mahabharata/
+```
+
+### Ingest
 
 ```bash
 python -m scripts.ingest_documents
 ```
 
-This will create a local Chroma database in `data/chroma/`.
+First run will download the small embedding model (~80 MB) and then process the books.  
+This can take 10–30 minutes depending on your machine because we have very large PDFs.
 
-### 5. Run the API
+### Run API
 
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
-
-Open http://localhost:8000/docs
-
----
-
-## Notes
-
-- Some PDFs may return empty text (they are scanned images). We can add OCR later.
-- First ingestion of large books can take several minutes because of embedding.

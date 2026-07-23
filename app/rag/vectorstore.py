@@ -1,6 +1,5 @@
 """
-Chroma vector store helpers using LangChain.
-Local file-based vector database – no Postgres required.
+Chroma vector store with local embeddings (no Google/OpenAI API needed for embeddings).
 """
 
 from pathlib import Path
@@ -8,7 +7,7 @@ from typing import List, Optional
 
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 from app.config import get_settings
 
@@ -18,17 +17,20 @@ CHROMA_DIR = Path(__file__).resolve().parents[2] / "data" / "chroma"
 
 
 def get_embeddings():
-    settings = get_settings()
-    return GoogleGenerativeAIEmbeddings(
-        model=settings.embedding_model,
-        google_api_key=settings.google_api_key,
+    """
+    Local embedding model – runs on your machine.
+    all-MiniLM-L6-v2 is small, fast and good enough for this use case.
+    """
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"},          # use "cuda" if you have a GPU
+        encode_kwargs={"normalize_embeddings": True},
     )
 
 
 def get_vectorstore(collection_name: str = "itihasa_docs") -> Chroma:
     """
     Returns a persistent Chroma vector store.
-    Creates the directory if it does not exist.
     """
     CHROMA_DIR.mkdir(parents=True, exist_ok=True)
 

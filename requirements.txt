@@ -8,7 +8,7 @@ pydantic==2.10.4
 pydantic-settings==2.7.0
 python-dotenv==1.0.1
 
-# LLM providers
+# LLM providers (still used for the chat answers)
 openai>=1.58.0
 google-generativeai>=0.8.3
 
@@ -19,9 +19,13 @@ langchain-openai==0.2.14
 langchain-google-genai==2.0.8
 langchain-text-splitters==0.3.4
 langchain-chroma>=0.1.4
+langchain-huggingface>=0.1.0
 
-# Vector store - Chroma (local, no Postgres needed for now)
+# Vector store - Chroma (local)
 chromadb>=0.5.0
+
+# Local embeddings
+sentence-transformers>=3.0.0
 
 # PDF processing
 pymupdf==1.25.1
