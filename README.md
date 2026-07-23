@@ -32,11 +32,20 @@ Edit `.env` and add:
 - `GOOGLE_API_KEY` → from https://aistudio.google.com
 - `DATABASE_URL` → your Render Postgres connection string (or local Postgres with pgvector)
 
-### 3. Put your PDFs
+### 3. Put your PDFs (separate folders)
 
+```
+knowledge/pdfs/
+├── ramayana/          ← Put all Ramayana PDFs here
+│   └── *.pdf
+└── mahabharata/       ← Put all Mahabharata PDFs here
+    └── *.pdf
+```
+
+Example:
 ```bash
-# Place your Ramayana / Mahabharata PDFs here
-cp /path/to/your/*.pdf knowledge/pdfs/
+cp /path/to/your/ramayana-*.pdf knowledge/pdfs/ramayana/
+cp /path/to/your/mahabharata-*.pdf knowledge/pdfs/mahabharata/
 ```
 
 ### 4. Create the vector extension (one-time on Postgres)
@@ -69,7 +78,7 @@ Open http://localhost:8000/docs to try the `/chat` endpoint.
 {
   "message": "Who is Hanuman and what is he known for?",
   "history": [],
-  "epic_filter": "ramayana",   // optional
+  "epic_filter": "ramayana",   // optional: "ramayana" | "mahabharata"
   "provider": "grok"           // optional: "grok" | "gemini"
 }
 ```
@@ -85,7 +94,9 @@ app/
 ├── rag/                 # Ingest, retrieve, vectorstore
 ├── prompts/system.py    # Kid-safe system prompt
 └── main.py
-knowledge/pdfs/          # Your PDF documents (gitignored)
+knowledge/pdfs/
+├── ramayana/            # Your Ramayana PDFs
+└── mahabharata/         # Your Mahabharata PDFs
 scripts/ingest_documents.py
 ```
 

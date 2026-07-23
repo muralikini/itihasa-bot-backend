@@ -19,8 +19,9 @@ dist/
 .ruff_cache/
 
 # Knowledge base - PDFs are large (up to 89MB), keep out of git
-knowledge/pdfs/*
-!knowledge/pdfs/.gitkeep
+knowledge/pdfs/**/*.pdf
+knowledge/pdfs/**/*.PDF
+!knowledge/pdfs/**/.gitkeep
 
 # Vector store / local data
 data/

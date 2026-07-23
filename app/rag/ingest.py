@@ -1,5 +1,6 @@
 """
 PDF ingestion pipeline for Ramayana & Mahabharata documents.
+Supports separate folders: knowledge/pdfs/ramayana/ and knowledge/pdfs/mahabharata/
 """
 
 from pathlib import Path
@@ -28,16 +29,16 @@ def extract_text_from_pdf(pdf_path: Path) -> str:
     return "\n\n".join(texts)
 
 
-def load_all_pdfs() -> List[Document]:
-    """Load every PDF in knowledge/pdfs/ and return LangChain Documents."""
+def load_pdfs_from_folder(folder: Path, epic: str) -> List[Document]:
+    """Load all PDFs from a specific epic folder."""
     documents: List[Document] = []
 
-    if not KNOWLEDGE_DIR.exists():
-        print(f"[Ingest] Knowledge directory not found: {KNOWLEDGE_DIR}")
+    if not folder.exists():
+        print(f"[Ingest] Folder not found: {folder}")
         return documents
 
-    pdf_files = list(KNOWLEDGE_DIR.glob("*.pdf")) + list(KNOWLEDGE_DIR.glob("*.PDF"))
-    print(f"[Ingest] Found {len(pdf_files)} PDF(s)")
+    pdf_files = list(folder.glob("*.pdf")) + list(folder.glob("*.PDF"))
+    print(f"[Ingest] Found {len(pdf_files)} PDF(s) in {epic}/")
 
     for pdf_path in pdf_files:
         print(f"[Ingest] Processing: {pdf_path.name} ...")
@@ -46,14 +47,6 @@ def load_all_pdfs() -> List[Document]:
             if not text.strip():
                 print(f"  → Empty text, skipping")
                 continue
-
-            # Simple metadata guessing from filename
-            name_lower = pdf_path.name.lower()
-            epic = "unknown"
-            if "ramayan" in name_lower or "ramayana" in name_lower:
-                epic = "ramayana"
-            elif "mahabharat" in name_lower or "mahabharata" in name_lower or "mb" in name_lower:
-                epic = "mahabharata"
 
             doc = Document(
                 page_content=text,
@@ -67,6 +60,55 @@ def load_all_pdfs() -> List[Document]:
             print(f"  → Extracted ~{len(text):,} characters | epic={epic}")
         except Exception as e:
             print(f"  → ERROR processing {pdf_path.name}: {e}")
+
+    return documents
+
+
+def load_all_pdfs() -> List[Document]:
+    """
+    Load PDFs from both epic folders.
+    Structure expected:
+        knowledge/pdfs/ramayana/*.pdf
+        knowledge/pdfs/mahabharata/*.pdf
+    """
+    documents: List[Document] = []
+
+    # Load Ramayana
+    ramayana_dir = KNOWLEDGE_DIR / "ramayana"
+    documents.extend(load_pdfs_from_folder(ramayana_dir, "ramayana"))
+
+    # Load Mahabharata
+    mahabharata_dir = KNOWLEDGE_DIR / "mahabharata"
+    documents.extend(load_pdfs_from_folder(mahabharata_dir, "mahabharata"))
+
+    # Fallback: also check the root pdfs/ folder (for old structure)
+    root_pdfs = list(KNOWLEDGE_DIR.glob("*.pdf")) + list(KNOWLEDGE_DIR.glob("*.PDF"))
+    if root_pdfs:
+        print(f"[Ingest] Also found {len(root_pdfs)} PDF(s) in root pdfs/ folder (legacy)")
+        for pdf_path in root_pdfs:
+            name_lower = pdf_path.name.lower()
+            epic = "unknown"
+            if "ramayan" in name_lower:
+                epic = "ramayana"
+            elif "mahabharat" in name_lower or "mb" in name_lower:
+                epic = "mahabharata"
+
+            try:
+                text = extract_text_from_pdf(pdf_path)
+                if text.strip():
+                    documents.append(
+                        Document(
+                            page_content=text,
+                            metadata={
+                                "source": pdf_path.name,
+                                "epic": epic,
+                                "file_path": str(pdf_path),
+                            },
+                        )
+                    )
+                    print(f"  → {pdf_path.name} | epic={epic}")
+            except Exception as e:
+                print(f"  → ERROR: {e}")
 
     return documents
 
@@ -92,6 +134,7 @@ def ingest_all(reset: bool = False) -> int:
     documents = load_all_pdfs()
     if not documents:
         print("[Ingest] No documents to ingest.")
+        print("  → Put PDFs in: knowledge/pdfs/ramayana/  or  knowledge/pdfs/mahabharata/")
         return 0
 
     chunks = chunk_documents(documents)
